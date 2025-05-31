@@ -2,15 +2,14 @@
 """
 select_positions.py
 
-Given a CSV ranked from the smallest to largest TotalPenalty,
-return n + 2 rows:
+Return (n + 2) rows from a ranked-by-TotalPenalty CSV:
 
-  • The row whose Position is the minimum value in the file
-  • The row whose Position is the maximum value in the file
-  • The n best-scoring rows (lowest TotalPenalty) *excluding*
-    those two positions
+ • Row with the smallest Position  (first residue)   → flag 'z'
+ • Row with the largest  Position  (last  residue)   → flag 'a'
+ • The n best-scoring rows *excluding* those two
 
-Only the columns Position, Residue and TotalPenalty are printed.
+Add column 'NeighborFlag' = 'a' or 'z' depending on whether the
+closest-scoring lower-penalty neighbor is in front ('a') or behind ('z').
 """
 
 import argparse
@@ -18,22 +17,38 @@ import sys
 import pandas as pd
 
 
-def select_positions(df: pd.DataFrame, n: int) -> pd.DataFrame:
+def compute_neighbor_flags(df: pd.DataFrame) -> pd.Series:
     """
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Must contain columns 'Position', 'Residue', 'TotalPenalty'.
-    n : int
-        Number of top-ranked rows to return in addition to the
-        first and last position.
+    For every row, label 'a' if the closest neighbor with lower
+    TotalPenalty is earlier (smaller Position); else 'z'.
+    """
+    # Ensure rows are ordered by Position so .shift() yields neighbors
+    ordered = df.sort_values("Position").reset_index(drop=True)
 
-    Returns
-    -------
-    pandas.DataFrame
-        n + 2 rows with columns Position, Residue, TotalPenalty.
-        Ordered as [min-position row, max-position row, top-n rows].
-    """
+    # Penalty of previous / next positions in sequence
+    ordered["PrevPenalty"] = ordered["TotalPenalty"].shift(1)
+    ordered["NextPenalty"] = ordered["TotalPenalty"].shift(-1)
+
+    def flag(row):
+        prev_pen = row["PrevPenalty"]
+        next_pen = row["NextPenalty"]
+
+        # Decide when only one neighbor exists
+        if pd.isna(prev_pen):
+            return "z"   # only next neighbor
+        if pd.isna(next_pen):
+            return "a"   # only previous neighbor
+
+        # Both neighbors exist – choose the lower-penalty one
+        return "a" if prev_pen <= next_pen else "z"
+
+    ordered["NeighborFlag"] = ordered.apply(flag, axis=1)
+
+    # Map from Position to flag for fast lookup later
+    return ordered.set_index("Position")["NeighborFlag"]
+
+
+def select_positions(df: pd.DataFrame, n: int) -> pd.DataFrame:
     # Identify first and last positions in the sequence
     min_pos = df["Position"].min()
     max_pos = df["Position"].max()
@@ -41,32 +56,35 @@ def select_positions(df: pd.DataFrame, n: int) -> pd.DataFrame:
     first_row = df.loc[df["Position"] == min_pos].iloc[0]
     last_row  = df.loc[df["Position"] == max_pos].iloc[0]
 
-    # Start from best (lowest) TotalPenalty and exclude first/last positions
+    # Best n rows excluding first/last positions
     ranked = (
         df.sort_values("TotalPenalty", ascending=True)
           .query("Position not in (@min_pos, @max_pos)")
           .head(n)
     )
 
-    # Assemble result: first, last, then the n best
+    # Assemble result DataFrame
     result = pd.concat(
         [first_row.to_frame().T, last_row.to_frame().T, ranked],
         ignore_index=True,
     )
 
-    return result[["Position", "Residue", "TotalPenalty"]]
+    # Add NeighborFlag column
+    neighbor_flags = compute_neighbor_flags(df)
+    result["NeighborFlag"] = result["Position"].map(neighbor_flags)
+
+    return result[["Position", "Residue", "TotalPenalty", "NeighborFlag"]]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Select the first & last positions plus the top-n best-scoring positions."
+        description="Select first & last positions plus the top-n best-scoring positions"
+                    " and label each with an 'a' or 'z' neighbor flag."
     )
-    parser.add_argument("csv_file", help="Path to the ranked CSV file")
+    parser.add_argument("csv_file", help="Path to ranked CSV file")
     parser.add_argument(
-        "-n",
-        type=int,
-        required=True,
-        help="Number of additional top positions to return (excluding first & last)",
+        "-n", type=int, required=True,
+        help="Number of additional top positions to return (excluding first & last)"
     )
     args = parser.parse_args()
 
@@ -75,18 +93,18 @@ def main() -> None:
     except Exception as exc:
         sys.exit(f"Error reading CSV: {exc}")
 
-    needed_cols = {"Position", "Residue", "TotalPenalty"}
-    if not needed_cols.issubset(df.columns):
-        sys.exit(f"CSV must contain columns: {', '.join(needed_cols)}")
+    needed = {"Position", "Residue", "TotalPenalty"}
+    if not needed.issubset(df.columns):
+        sys.exit(f"CSV must contain columns: {', '.join(needed)}")
 
     if args.n <= 0:
         sys.exit("n must be a positive integer")
 
-    available_core = len(df) - 2  # after dropping first/last
+    available_core = len(df) - 2
     if args.n > available_core:
         sys.exit(
             f"n={args.n} exceeds the available positions ({available_core}) "
-            "when first and last are excluded."
+            "after excluding first and last."
         )
 
     out = select_positions(df, args.n)
