@@ -1,0 +1,6 @@
+Position,Residue,TotalPenalty,NeighborFlag,Protein,Gene
+1,M,1.06,z,P53367,ARFIP1
+373,Q,2.19,a,P53367,ARFIP1
+25,R,0.96,z,P53367,ARFIP1
+66,F,1.11,a,P53367,ARFIP1
+55,N,1.19,a,P53367,ARFIP1
