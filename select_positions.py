@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-select_positions_with_gene.py
+select_positions.py
 
 Given a CSV ranked by TotalPenalty, extract the protein accession from the
 filename (e.g. "P53367_scores.csv" → protein "P53367"), look up its corresponding
