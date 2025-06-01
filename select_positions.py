@@ -53,9 +53,13 @@ def select_positions(df: pd.DataFrame, n: int, protein: str, gene: str) -> pd.Da
           .head(n)
     )
 
+    # if you want the first and last positions too (but just use normal popcell for this)
     result = pd.concat([first_row.to_frame().T,
                         last_row.to_frame().T,
                         ranked], ignore_index=True)
+    
+    # for only internal positions)
+    result = pd.concat([ranked], ignore_index=True)
 
     result["NeighborFlag"] = result["Position"].map(compute_neighbor_flags(df))
     result["Protein"] = protein
