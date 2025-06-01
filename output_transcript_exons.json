@@ -1,70 +1,70 @@
 {
   "ENST00000253188": [
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33225553,
-      "end": 33225850,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33225703
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33215769,
-      "end": 33215973,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33215973
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33212851,
-      "end": 33213002,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33213002
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33212514,
-      "end": 33212639,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33212639
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33212292,
-      "end": 33212445,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33212445
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33211414,
-      "end": 33211537,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33211537
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33211225,
-      "end": 33211328,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33211328
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33210802,
-      "end": 33210898,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33210898
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33210467,
-      "end": 33210616,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33210616
     },
     {
+      "chrom": "19",
+      "strand": -1,
       "start": 33209308,
-      "end": 33209485,
-      "strand": -1,
-      "chrom": "19"
+      "end": 33209485
     },
     {
-      "start": 33208664,
-      "end": 33209021,
+      "chrom": "19",
       "strand": -1,
-      "chrom": "19"
+      "start": 33208891,
+      "end": 33209021
     }
   ]
 }
