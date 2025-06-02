@@ -23,6 +23,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from pam_surgery import patch_pam
 
 import pandas as pd
 
@@ -126,15 +127,57 @@ def build_components(row) -> dict:
             protospacer = seq[N_idx - 20:N_idx]
             pbs = rc(seq[N_idx - 18:N_idx - 3])
 
-            # RTT logic
+            # RTT and PAM mod logic
             if flag == "a":
                 cod_start = anchor_idx
+                distance = abs(N_idx - cod_start)
+                sign = '-' if (N_idx - cod_start) < 0 else '+'
+                phase = distance % 3
+                if phase == 0:
+                    window = seq[N_idx:N_idx + 3]
+                    seq = seq[:N_idx] + patch_pam(window, pam_type) + seq[N_idx+3:]
+                elif phase == 1:
+                    if sign == '-':
+                        window = seq[N_idx - 2:N_idx + 4]
+                        seq = seq[:N_idx-2] + patch_pam(window, pam_type) + seq[N_idx+4:]
+                    else: # sign == '+'
+                        window = seq[N_idx - 1:N_idx + 5]
+                        seq = seq[:N_idx-1] + patch_pam(window, pam_type) + seq[N_idx+5:]
+                elif phase == 2:
+                    if sign == '-':
+                        window = seq[N_idx - 1:N_idx + 5]
+                        seq = seq[:N_idx-1] + patch_pam(window, pam_type) + seq[N_idx+5:]
+                    else: # sign == '+'
+                        window = seq[N_idx - 2:N_idx + 4]
+                        seq = seq[:N_idx-2] + patch_pam(window, pam_type) + seq[N_idx+4:]
+
                 rtt1 = seq[N_idx - 3: cod_start]
                 rtt2 = "NNN"
                 rtt3 = seq[cod_start: cod_start + 27]
                 rtt = rc(rtt1 + rtt2 + rtt3)
             else:  # NGG / z
                 cod_end = anchor_idx
+                cod_start = cod_end - 2
+                distance = abs(N_idx - cod_start)
+                sign = '-' if (N_idx - cod_start) < 0 else '+'
+                phase = distance % 3
+                if phase == 0:
+                    window = seq[N_idx:N_idx + 3]
+                    seq = seq[:N_idx] + patch_pam(window, pam_type) + seq[N_idx+3:]
+                elif phase == 1:
+                    if sign == '-':
+                        window = seq[N_idx - 2:N_idx + 4]
+                        seq = seq[:N_idx-2] + patch_pam(window, pam_type) + seq[N_idx+4:]
+                    else: # sign == '+'
+                        window = seq[N_idx - 1:N_idx + 5]
+                        seq = seq[:N_idx-1] + patch_pam(window, pam_type) + seq[N_idx+5:]
+                elif phase == 2:
+                    if sign == '-':
+                        window = seq[N_idx - 1:N_idx + 5]
+                        seq = seq[:N_idx-1] + patch_pam(window, pam_type) + seq[N_idx+5:]
+                    else: # sign == '+'
+                        window = seq[N_idx - 2:N_idx + 4]
+                        seq = seq[:N_idx-2] + patch_pam(window, pam_type) + seq[N_idx+4:]
                 rtt1 = seq[N_idx - 3:cod_end + 1]
                 rtt2 = "NNN"
                 rtt3 = seq[cod_end + 1:cod_end + 28]
@@ -142,18 +185,59 @@ def build_components(row) -> dict:
 
         else:                     # ---------- CCN protospacer / PBS
             C_idx = idx
-            protospacer = rc(seq[C_idx + 1:C_idx + 21])    # 20 nt
+            protospacer = rc(seq[C_idx + 3:C_idx + 24])    # 20 nt
             pbs = rc(seq[C_idx + 6:C_idx + 21])            # 15 nt
 
-            # RTT logic (only for flag 'z')
+            # RTT and PAM mod logic
             if flag == "z":
                 cod_end = anchor_idx
-                rtt1 = rc(seq[cod_end + 1:C_idx + 6])
+                cod_start = cod_end - 2
+                distance = abs(C_idx - cod_start)
+                sign = '-' if (C_idx - cod_start) < 0 else '+'
+                phase = distance % 3
+                if phase == 0:
+                    window = seq[C_idx:C_idx + 3]
+                    seq = seq[:C_idx] + patch_pam(window, pam_type) + seq[C_idx+3:]
+                elif phase == 1:
+                    if sign == '-':
+                        window = seq[C_idx - 2:C_idx + 4]
+                        seq = seq[:C_idx-2] + patch_pam(window, pam_type) + seq[C_idx+4:]
+                    else: # sign == '+'
+                        window = seq[C_idx - 1:C_idx + 5]
+                        seq = seq[:C_idx-1] + patch_pam(window, pam_type) + seq[C_idx+5:]
+                elif phase == 2:
+                    if sign == '-':
+                        window = seq[C_idx - 1:C_idx + 5]
+                        seq = seq[:C_idx-1] + patch_pam(window, pam_type) + seq[C_idx+5:]
+                    else: # sign == '+'
+                        window = seq[C_idx - 2:C_idx + 4]
+                        seq = seq[:C_idx-2] + patch_pam(window, pam_type) + seq[C_idx+4:]
+                rtt1 = rc(seq[cod_end + 1:C_idx + 4])
                 rtt2 = "NNN"
                 rtt3 = rc(seq[cod_end - 26: cod_end + 1])
                 rtt = rtt1 + rtt2 + rtt3
-            else:  # CCN / a : leave RTT blank
+            else:  # CCN / a
                 cod_start = anchor_idx
+                distance = abs(C_idx - cod_start)
+                sign = '-' if (C_idx - cod_start) < 0 else '+'
+                phase = distance % 3
+                if phase == 0:
+                    window = seq[C_idx:C_idx + 3]
+                    seq = seq[:C_idx] + patch_pam(window, pam_type) + seq[C_idx+3:]
+                elif phase == 1:
+                    if sign == '-':
+                        window = seq[C_idx - 2:C_idx + 4]
+                        seq = seq[:C_idx-2] + patch_pam(window, pam_type) + seq[C_idx+4:]
+                    else: # sign == '+'
+                        window = seq[C_idx - 1:C_idx + 5]
+                        seq = seq[:C_idx-1] + patch_pam(window, pam_type) + seq[C_idx+5:]
+                elif phase == 2:
+                    if sign == '-':
+                        window = seq[C_idx - 1:C_idx + 5]
+                        seq = seq[:C_idx-1] + patch_pam(window, pam_type) + seq[C_idx+5:]
+                    else: # sign == '+'
+                        window = seq[C_idx - 2:C_idx + 4]
+                        seq = seq[:C_idx-2] + patch_pam(window, pam_type) + seq[C_idx+4:]
                 rtt1 = rc(seq[cod_start:C_idx + 6])
                 rtt2 = "NNN"
                 rtt3 = rc(seq[cod_start - 27:cod_start])
