@@ -185,7 +185,7 @@ def build_components(row) -> dict:
 
         else:                     # ---------- CCN protospacer / PBS
             C_idx = idx
-            protospacer = rc(seq[C_idx + 3:C_idx + 24])    # 20 nt
+            protospacer = rc(seq[C_idx + 3:C_idx + 23])    # 20 nt
             pbs = rc(seq[C_idx + 6:C_idx + 21])            # 15 nt
 
             # RTT and PAM mod logic

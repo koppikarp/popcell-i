@@ -35,26 +35,30 @@ rank = {c:i for aa in aa_to_codons for i,c in enumerate(aa_to_codons[aa][::-1])}
 pam_ngg = re.compile(r'[ACGT]GG')
 pam_ccn = re.compile(r'CC[ACGT]')
 
-def _erase_single(codon:str,is_ngg:bool)->str|None:
-    if codon=="TGG":                          # Trp cannot change
-        return None
+def _erase_single(codon: str, is_ngg: bool) -> str:
+    if codon == "TGG":  # Trp can't change
+        return codon
     for alt in aa_to_codons[codon_to_aa[codon]]:
-        if alt==codon: continue
-        if is_ngg and not pam_ngg.search(alt):      return alt
-        if (not is_ngg) and not pam_ccn.search(alt):return alt
-    return None
+        if alt == codon:
+            continue
+        if is_ngg and not pam_ngg.search(alt):
+            return alt
+        if not is_ngg and not pam_ccn.search(alt):
+            return alt
+    return codon  # fallback: return original
 
-def _erase_pair(c1,c2,is_ngg):
+def _erase_pair(c1, c2, is_ngg):
     best, best_rank = None, 1e9
-    for a,b in itertools.product(aa_to_codons[codon_to_aa[c1]],
-                                 aa_to_codons[codon_to_aa[c2]]):
-        test = a+b
-        bad  = pam_ngg.search(test) if is_ngg else pam_ccn.search(test)
-        if bad: continue
-        r = rank[a]+rank[b]
+    for a, b in itertools.product(aa_to_codons[codon_to_aa[c1]],
+                                  aa_to_codons[codon_to_aa[c2]]):
+        test = a + b
+        bad = pam_ngg.search(test) if is_ngg else pam_ccn.search(test)
+        if bad:
+            continue
+        r = rank[a] + rank[b]
         if r < best_rank:
-            best,best_rank = a+b, r
-    return best
+            best, best_rank = a + b, r
+    return best if best else c1 + c2  # fallback: return original 6-mer
 
 def patch_pam(window:str, pam_type:str) -> str|None:
     """

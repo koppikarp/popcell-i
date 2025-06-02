@@ -10,3 +10,4 @@ popcell-i will only generate pegrna if tag can be inserted at exact location
 therefore popcell-i is much more strict
 (then)
 - find pam
+- design pegrna on annotated scores with PAMs, makes use of pam surgery to change PAMs
