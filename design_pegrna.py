@@ -24,6 +24,8 @@ import re
 import sys
 from pathlib import Path
 from pam_surgery import patch_pam
+import Bio.Seq as Seq
+
 
 import pandas as pd
 
@@ -32,6 +34,7 @@ RESTRICTION_6MERS = {
     "GAAGAC", "GTCTTC",  # BbsI
     "CGTCTC", "GAGACG",  # BsmBI
 }
+
 # add reverse complements
 RESTRICTION_6MERS |= {s[::-1].translate(str.maketrans("ACGT", "TGCA"))
                       for s in RESTRICTION_6MERS}
@@ -186,7 +189,7 @@ def build_components(row) -> dict:
         else:                     # ---------- CCN protospacer / PBS
             C_idx = idx
             protospacer = rc(seq[C_idx + 3:C_idx + 23])    # 20 nt
-            pbs = rc(seq[C_idx + 6:C_idx + 21])            # 15 nt
+            pbs = rc(rc(seq[C_idx + 6:C_idx + 21]))         # 15 nt
 
             # RTT and PAM mod logic
             if flag == "z":
@@ -212,10 +215,10 @@ def build_components(row) -> dict:
                     else: # sign == '+'
                         window = seq[C_idx - 2:C_idx + 4]
                         seq = seq[:C_idx-2] + patch_pam(window, pam_type) + seq[C_idx+4:]
-                rtt1 = rc(seq[cod_end + 1:C_idx + 4])
+                rtt1 = rc(seq[cod_end + 1:C_idx + 6])
                 rtt2 = "NNN"
                 rtt3 = rc(seq[cod_end - 26: cod_end + 1])
-                rtt = rtt1 + rtt2 + rtt3
+                rtt = rc(rtt1 + rtt2 + rtt3)
             else:  # CCN / a
                 cod_start = anchor_idx
                 distance = abs(C_idx - cod_start)
@@ -241,7 +244,7 @@ def build_components(row) -> dict:
                 rtt1 = rc(seq[cod_start:C_idx + 6])
                 rtt2 = "NNN"
                 rtt3 = rc(seq[cod_start - 27:cod_start])
-                rtt = rtt1 + rtt2 + rtt3
+                rtt = rc(rtt1 + rtt2 + rtt3)
 
         # length sanity
         if len(protospacer) != 20 or len(pbs) != 15:
